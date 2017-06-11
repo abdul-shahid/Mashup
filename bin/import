@@ -1,0 +1,92 @@
+#!/usr/bin/env php
+<?php
+
+    require("../includes/functions.php");
+
+    // verifies usage
+    if ($argc != 2)
+    {
+    	print("Usage ./import path to file\n");
+    	return -1;
+    }
+
+    $filename = $argv[1];
+
+    //check for file
+    if (!file_exists($filename))
+    {
+    	print("Error file not found");
+    	return 1;
+    }
+
+    //check for readability
+
+    if (!is_readable($filename))
+    {
+    	print("Error cannot read from file");
+    }
+
+    //open file
+
+    $file = fopen($filename, "r");
+    if (!$file)
+    {
+    	print("ErrorL unable to open file");
+    	return -1;
+    }
+
+    // define constants
+    const COUNTRY_CODE = 0;
+    const POSTAL_CODE = 1;
+    const PLACE_NAME = 2;
+    const ADMIN_NAME1 = 3;
+    const ADMIN_CODE1 = 4;
+    const ADMIN_NAME2 = 5;
+    const ADMIN_CODE2 = 6;
+    const ADMIN_NAME3 = 7;
+    const ADMIN_CODE3 = 8;
+    const LATITUDE = 9;
+    const LONGITUDE = 10;
+    const ACCURACY = 11;
+
+    // import to database
+    $currLine = 1;
+    $errCount = 0;
+    while (($line = fgetcsv($file, 0, "\t"))!== FALSE)
+    {
+    	// insert row
+    	$result = query(
+            "INSERT 
+                INTO places 
+                (country_code, postal_code, place_name, admin_name1, admin_code1, admin_name2, admin_code2, admin_name3, admin_code3, latitude, longitude, accuracy) 
+                VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                $line[COUNTRY_CODE], 
+                $line[POSTAL_CODE], 
+                $line[PLACE_NAME], 
+                $line[ADMIN_NAME1], 
+                $line[ADMIN_CODE1], 
+                $line[ADMIN_NAME2], 
+                $line[ADMIN_CODE2], 
+                $line[ADMIN_NAME3], 
+                $line[ADMIN_CODE3], 
+                $line[LATITUDE], 
+                $line[LONGITUDE], 
+                $line[ACCURACY]
+        );
+    	//check
+
+    	if ($result === false)
+    	{
+    		print("Error inserting to database on line" . $currLine . "\n");
+    		$errCount++;
+    	}
+    	$currLine++;
+    }
+
+    //results
+    print("File imported: \nLines read: " . $currLine . "\nErrors: " . $errCount . "\n");
+
+    fclose($file);
+
+?>
